@@ -43,8 +43,6 @@ async function login(call, callback) {
     try {
         const email = call.request.email;
 
-        console.log(call.request)
-
         const sql = `
         SELECT * FROM user
         WHERE email = '${email}'
@@ -53,15 +51,12 @@ async function login(call, callback) {
         const res = await pool.query(sql);
 
         const data = res[0][0];
-
-        console.log(data)
-
         const hashedPassword = data.hashedPassword
 
         const passwordMatched = await bcrypt.compare(call.request.password, hashedPassword);
 
         if (passwordMatched) {
-            console.log("matched")
+            // console.log("matched")
             callback(null, data)
         }
         else {
@@ -75,17 +70,55 @@ async function login(call, callback) {
     }
 
 
-
-
-
-
 }
-function updateUser(call, callback) {
+async function updateUser(call, callback) {
 
+    const email = call.request.email
+    const name = call.request.name
+    const address = call.request.address
+
+    try {
+        const sql = `
+            UPDATE user
+            SET name = '${name}', address = '${address}'
+            WHERE email = '${email}'
+        `
+
+        await pool.query(sql)
+        // console.log(data);
+
+        call.request.code = grpc.status.OK
+
+        callback(null, call.request)
+
+    } catch (err) {
+        console.log(err)
+        err.code = grpc.status.INVALID_ARGUMENT
+        callback(err)
+    }
 }
 function getUser(call, callback) {
 
 }
-function getAllUsers(call, callback) {
+async function getAllUsers(call, callback) {
+
+    try {
+        const sql = `
+            SELECT * FROM user
+        `
+
+        const res = await pool.query(sql)
+
+        const data = res[0]
+
+        // console.log(data);
+
+        callback(null, { "users": data })
+
+    } catch (err) {
+        console.log(err)
+        err.code = grpc.status.INVALID_ARGUMENT
+        callback(err)
+    }
 
 }
